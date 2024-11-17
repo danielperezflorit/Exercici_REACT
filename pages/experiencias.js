@@ -6,7 +6,9 @@ export default function Experiencias() {
   const [experiencias, setExperiencias] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const URL = "http://localhost:3000/api/experiencias"
+  const [editingExperience, setEditingExperience] = useState(null); // Estado para la experiencia en edición
+  const URL = "http://localhost:3000/api/experiencias";
+
   useEffect(() => {
     setLoading(true);
     const fetchExperiencias = async () => {
@@ -24,15 +26,44 @@ export default function Experiencias() {
     fetchExperiencias();
   }, []);
 
-  const handleExperienciaSubmit = async (newExperiencia) => {
-    //Crear experiencia
-    try {
+  const handleExperienciaSubmit = async (experience) => {
+    if (editingExperience) {
+      // Actualizar experiencia existente
+      try {
+        const response = await fetch(`${URL}/${editingExperience._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(experience),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Error al actualizar la experiencia');
+        }
+  
+        const updatedExperience = await response.json();
+  
+        // Actualizar la lista de experiencias inmediatamente
+        setExperiencias((prevExperiencias) =>
+          prevExperiencias.map((exp) =>
+            exp._id === updatedExperience._id ? updatedExperience : exp
+          )
+        );
+  
+        setEditingExperience(null); // Salir del modo edición
+      } catch (err) {
+        console.error(err.message);
+      }
+    } else {
+      // Crear nueva experiencia
+      try {
         const response = await fetch(URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(newExperiencia),
+          body: JSON.stringify(experience),
         });
   
         if (!response.ok) {
@@ -40,27 +71,34 @@ export default function Experiencias() {
         }
   
         const data = await response.json();
-        setExperiencias([...experiencias, data]); // Actualiza la lista de experiencias
+  
+        // Agregar la nueva experiencia a la lista
+        setExperiencias((prevExperiencias) => [...prevExperiencias, data]);
       } catch (err) {
         console.error(err.message);
       }
+    }
   };
+  
 
   const handleDeleteExperience = async (expId) => {
-    // Eliminar experiencia
     try {
-        const response = await fetch(`http://localhost:3000/api/experiencias/${expId}`, {
-          method: 'DELETE',
-        });
-  
-        if (!response.ok) {
-          throw new Error('Error al eliminar la experiencia');
-        }
-  
-        setExperiencias(experiencias.filter(exp => exp._id !== expId)); // Actualiza la lista
-      } catch (err) {
-        console.error(err);
+      const response = await fetch(`${URL}/${expId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar la experiencia');
       }
+
+      setExperiencias(experiencias.filter((exp) => exp._id !== expId)); // Actualiza la lista
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEditExperience = (experience) => {
+    setEditingExperience(experience); // Activa el modo edición
   };
 
   return (
@@ -70,10 +108,18 @@ export default function Experiencias() {
       {error && <p>Error: {error}</p>}
       {!loading && !error && (
         <>
-          <ExperienciaList experiencias={experiencias} onDeleteExperience={handleDeleteExperience} />
-          <ExperienciaForm onSubmit={handleExperienciaSubmit} />
+          <ExperienciaList
+            experiencias={experiencias}
+            onDeleteExperience={handleDeleteExperience}
+            onEditExperience={handleEditExperience} // Nueva función para editar
+          />
+          <ExperienciaForm
+            onSubmit={handleExperienciaSubmit}
+            editingExperience={editingExperience} // Pasar experiencia en edición
+          />
         </>
       )}
     </div>
   );
 }
+

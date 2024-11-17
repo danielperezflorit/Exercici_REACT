@@ -1,8 +1,10 @@
-// components/ExperienciaList.js
+import { useState } from 'react';
 
-import { useEffect, useState } from 'react';
-
-export default function ExperienciaList({ experiencias = [], onDeleteExperience }) { // Recibir onDeleteExperience como prop
+export default function ExperienciaList({
+  experiencias = [],
+  onDeleteExperience,
+  onEditExperience, // Nueva prop
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -10,9 +12,14 @@ export default function ExperienciaList({ experiencias = [], onDeleteExperience 
   if (error) return <p>Error: {error}</p>;
 
   const handleDelete = (id) => {
-    // Llamar a la función pasada desde el componente padre
     if (onDeleteExperience) {
       onDeleteExperience(id);
+    }
+  };
+
+  const handleEdit = (experience) => {
+    if (onEditExperience) {
+      onEditExperience(experience);
     }
   };
 
@@ -22,13 +29,21 @@ export default function ExperienciaList({ experiencias = [], onDeleteExperience 
       <ul>
         {experiencias.map((exp) => (
           <li key={exp._id}>
-            <p><strong>Descripción:</strong> {exp.description}</p>
-            <p><strong>Dueño:</strong> {exp.owner}</p>
-            <p><strong>Participantes:</strong> {exp.participants.join(', ')}</p>
-            <button onClick={() => handleDelete(exp._id)}>Eliminar</button> {/* Botón para eliminar */}
+            <p>
+              <strong>Descripción:</strong> {exp.description}
+            </p>
+            <p>
+              <strong>Dueño:</strong> {exp.owner}
+            </p>
+            <p>
+              <strong>Participantes:</strong> {exp.participants.join(', ')}
+            </p>
+            <button onClick={() => handleEdit(exp)}>Editar</button> {/* Botón para editar */}
+            <button onClick={() => handleDelete(exp._id)}>Eliminar</button>
           </li>
         ))}
       </ul>
     </div>
   );
 }
+
